@@ -1,9 +1,8 @@
 // src/components/GoogleLoginButton.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Box, Snackbar, useMediaQuery, useTheme } from "@mui/material";
-import MuiAlert from "@mui/material/Alert";
-import type { AlertProps } from "@mui/material/Alert";
+import { Button, Box, Snackbar, useMediaQuery, useTheme, Alert as MuiAlert } from "@mui/material";
+import type { AlertProps } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import type { User } from "../types/auth.types";
