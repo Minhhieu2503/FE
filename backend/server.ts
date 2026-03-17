@@ -1,6 +1,6 @@
+import 'dotenv/config'; // Load env variables early before any other imports
 import http from 'http';
 import app from './src/app';
-require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
 

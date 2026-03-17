@@ -6,6 +6,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectDB } from './config/db';
+import authRoutes from './modules/auth/auth.routes';
 
 const app = express();
 
@@ -18,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // DB
 connectDB();
+
+// Routes
+app.use('/auth', authRoutes);
 
 // Health check
 app.get('/', (req, res) => {
