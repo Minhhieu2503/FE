@@ -1,0 +1,3 @@
+BACKEND_TUNNEL_URL=https://shaggy-tools-rush.loca.lt
+BACKEND_AUTH_BASE=https://shaggy-tools-rush.loca.lt/auth
+UPDATED_AT=2026-03-17T14:30:25.043Z
