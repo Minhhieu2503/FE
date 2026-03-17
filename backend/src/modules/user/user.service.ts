@@ -60,3 +60,18 @@ export const updateUser = async (
 export const deleteUser = async (id: string): Promise<IUser | null> => {
   return await User.findByIdAndDelete(id);
 };
+export const suspendUser = async (id: string): Promise<IUser | null> => {
+  return await User.findByIdAndUpdate(
+    id,
+    { isActive: false },
+    { new: true, runValidators: true }
+  );
+};
+
+export const activateUser = async (id: string): Promise<IUser | null> => {
+  return await User.findByIdAndUpdate(
+    id,
+    { isActive: true },
+    { new: true, runValidators: true }
+  );
+};
