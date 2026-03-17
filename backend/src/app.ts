@@ -6,6 +6,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectDB } from './config/db';
+import userRoutes from './modules/user/user.route';
 
 const app = express();
 
@@ -23,5 +24,5 @@ connectDB();
 app.get('/', (req, res) => {
   res.json({ message: 'SnapBook API is running!' });
 });
-
+app.use('/api/users', userRoutes);
 export default app;
