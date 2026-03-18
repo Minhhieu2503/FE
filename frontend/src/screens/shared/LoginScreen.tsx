@@ -15,12 +15,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authService, getApiErrorMessage } from '../../services/auth.service';
+import { useGoogleFirebaseIdToken } from '../../hooks/useGoogleFirebaseIdToken';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { googleReady, signInAndGetFirebaseIdToken } = useGoogleFirebaseIdToken();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,6 +40,20 @@ export default function LoginScreen({ navigation }: any) {
       Alert.alert('Login Failed', getApiErrorMessage(error));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const session = await signInAndGetFirebaseIdToken();
+      await authService.completeOAuthLogin(session.accessToken, session.refreshToken);
+      Alert.alert('Success', 'Google login successful!');
+      navigation.replace('CustomerHome');
+    } catch (error: any) {
+      Alert.alert('Google Login Failed', getApiErrorMessage(error));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -128,6 +145,30 @@ export default function LoginScreen({ navigation }: any) {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.signInText}>Sign In →</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Button */}
+            <TouchableOpacity 
+              style={[styles.googleBtn, (googleLoading || !googleReady) && styles.googleBtnDisabled]}
+              onPress={handleGoogleLogin} 
+              activeOpacity={0.8}
+              disabled={googleLoading || !googleReady}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#DB4437" />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="#DB4437" />
+                  <Text style={styles.googleBtnText}>Google</Text>
+                </>
               )}
             </TouchableOpacity>
 
@@ -277,6 +318,42 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  dividerText: {
+    color: '#BBBBBB',
+    fontSize: 12,
+    letterSpacing: 1.5,
+    marginHorizontal: 12,
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 14,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  googleBtnDisabled: {
+    opacity: 0.7,
+  },
+  googleBtnText: {
+    color: '#333333',
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 12,
   },
   footerContainer: {
     flexDirection: 'row',

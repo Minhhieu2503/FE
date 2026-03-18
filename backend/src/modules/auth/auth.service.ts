@@ -1,7 +1,16 @@
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import User from '../../models/user.model';
-import { sendEmail } from '../../shared/email.service';
+
+type GoogleTokenResponse = {
+  access_token: string;
+  id_token?: string;
+};
+
+type GoogleUserInfo = {
+  sub: string;
+  email: string;
+  email_verified?: boolean;
+};
 
 // Generate Token
 export const generateAccessToken = (id: string, role: string) => {
@@ -76,65 +85,85 @@ export const refreshTokenService = async (token: string) => {
   }
 };
 
-export const forgotPasswordService = async (email: string) => {
-  const user = await User.findOne({ email: email.toLowerCase().trim() });
+const getGoogleClientId = () =>
+  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 
-  // Always return a generic message to avoid email enumeration.
-  if (!user) {
-    return;
+const getGoogleClientSecret = () =>
+  process.env.GOOGLE_CLIENT_SECRET || process.env.VITE_GOOGLE_CLIENT_SECRET;
+
+const getGoogleCallbackUrl = () =>
+  process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_CALLBACK_URL;
+
+export const getGoogleOAuthConfig = () => {
+  const clientId = getGoogleClientId();
+  const clientSecret = getGoogleClientSecret();
+  const callbackUrl = getGoogleCallbackUrl();
+
+  if (!clientId || !clientSecret || !callbackUrl) {
+    throw new Error('Missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or GOOGLE_REDIRECT_URI in backend env');
   }
 
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-  user.passwordResetToken = hashedResetToken;
-  user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
-  await user.save();
-
-  const resetBaseUrl =
-    process.env.RESET_PASSWORD_URL ||
-    process.env.FRONTEND_URL ||
-    'http://localhost:3000/reset-password';
-
-  const link = new URL(resetBaseUrl);
-  link.searchParams.set('token', resetToken);
-  link.searchParams.set('email', user.email);
-
-  const subject = 'SnapBook Password Reset';
-  const text = `We received a request to reset your password.\n\nUse this link within 15 minutes:\n${link.toString()}\n\nIf you did not request this, you can ignore this email.`;
-
-  const sent = await sendEmail({
-    to: user.email,
-    subject,
-    text,
-    html: `<p>We received a request to reset your password.</p><p>Use this link within <strong>15 minutes</strong>:</p><p><a href="${link.toString()}">${link.toString()}</a></p><p>If you did not request this, you can ignore this email.</p>`,
-  });
-
-  if (!sent) {
-    console.log(`Password reset link for ${user.email}: ${link.toString()}`);
-  }
+  return { clientId, clientSecret, callbackUrl };
 };
 
-export const resetPasswordService = async (token: string, newPassword: string, email?: string) => {
-  const hashedResetToken = crypto.createHash('sha256').update(token).digest('hex');
+export const exchangeGoogleCodeForTokens = async (code: string) => {
+  const { clientId, clientSecret, callbackUrl } = getGoogleOAuthConfig();
 
-  const query: Record<string, any> = {
-    passwordResetToken: hashedResetToken,
-    passwordResetExpires: { $gt: new Date() },
-  };
+  const body = new URLSearchParams({
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: callbackUrl,
+    grant_type: 'authorization_code',
+  });
 
-  if (email) {
-    query.email = email.toLowerCase().trim();
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  });
+
+  const data = (await response.json()) as GoogleTokenResponse & { error?: string; error_description?: string };
+
+  if (!response.ok || !data.access_token) {
+    throw new Error(data.error_description || data.error || 'Cannot exchange Google auth code');
   }
 
-  const user = await User.findOne(query);
+  return data;
+};
+
+export const fetchGoogleUserInfo = async (accessToken: string) => {
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const data = (await response.json()) as GoogleUserInfo & { error?: string };
+
+  if (!response.ok || !data.sub || !data.email) {
+    throw new Error('Cannot fetch Google user profile');
+  }
+
+  return data;
+};
+
+export const findOrCreateUserFromGoogle = async (googleUser: GoogleUserInfo) => {
+  let user = await User.findOne({ email: googleUser.email });
 
   if (!user) {
-    throw new Error('Reset token is invalid or expired');
+    user = await User.create({
+      email: googleUser.email,
+      firebaseUid: `google:${googleUser.sub}`,
+      role: 'CUSTOMER',
+    });
   }
 
-  user.password = newPassword;
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
-  await user.save();
+  if (!user.isActive) {
+    throw new Error('Account is banned or inactive');
+  }
+
+  return user;
 };
