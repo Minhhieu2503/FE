@@ -4,6 +4,7 @@ import StudioPortfolio, {
   IPortfolioSample,
   IStudioPortfolio,
 } from '../../models/studioPortfolio.model';
+import StudioContent, { IStudioContent } from '../../models/studioContent.model';
 import User from '../user/user.model';
 
 export interface SubmitPortfolioInput {
@@ -11,6 +12,16 @@ export interface SubmitPortfolioInput {
   description: string;
   samples: IPortfolioSample[];
   credentials: IPortfolioCredential[];
+}
+
+export interface SubmitStudioContentInput {
+  title: string;
+  description: string;
+  price: number;
+  images: {
+    url: string;
+    caption?: string;
+  }[];
 }
 
 export const submitPortfolio = async (
@@ -158,6 +169,7 @@ export const rejectPortfolio = async (
 
   return portfolio;
 };
+
 export const getProfileForReview = async (userId: string) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new Error('Invalid user id');
@@ -168,6 +180,7 @@ export const getProfileForReview = async (userId: string) => {
   if (!user) {
     throw new Error('User not found');
   }
+
   const portfolios = await StudioPortfolio.find({
     studioId: userId,
   }).sort({ createdAt: -1 });
@@ -176,4 +189,173 @@ export const getProfileForReview = async (userId: string) => {
     user,
     portfolios,
   };
+};
+
+// CONTENT
+
+export const submitStudioContent = async (
+  studioId: string,
+  payload: SubmitStudioContentInput
+): Promise<IStudioContent> => {
+  const { title, description, price, images } = payload;
+
+  if (!title?.trim()) {
+    throw new Error('Title is required');
+  }
+
+  if (!description?.trim()) {
+    throw new Error('Description is required');
+  }
+
+  if (price === undefined || price === null || Number(price) < 0) {
+    throw new Error('Valid price is required');
+  }
+
+  const studio = await User.findById(studioId);
+
+  if (!studio) {
+    throw new Error('Studio not found');
+  }
+
+  const content = await StudioContent.create({
+    studioId,
+    title,
+    description,
+    price,
+    images: Array.isArray(images) ? images : [],
+    status: 'pending',
+  });
+
+  return content;
+};
+
+export const getMyContents = async (studioId: string): Promise<IStudioContent[]> => {
+  return StudioContent.find({ studioId }).sort({ createdAt: -1 });
+};
+
+export const getMyContentDetail = async (
+  studioId: string,
+  contentId: string
+): Promise<IStudioContent> => {
+  if (!mongoose.Types.ObjectId.isValid(contentId)) {
+    throw new Error('Invalid content id');
+  }
+
+  const content = await StudioContent.findOne({
+    _id: contentId,
+    studioId,
+  });
+
+  if (!content) {
+    throw new Error('Content not found');
+  }
+
+  return content;
+};
+
+export const getAllContents = async (): Promise<IStudioContent[]> => {
+  return StudioContent.find()
+    .populate('studioId', 'fullName email role')
+    .populate('moderatedBy', 'fullName email role')
+    .sort({ createdAt: -1 });
+};
+
+export const getContentDetailByAdmin = async (
+  contentId: string
+): Promise<IStudioContent> => {
+  if (!mongoose.Types.ObjectId.isValid(contentId)) {
+    throw new Error('Invalid content id');
+  }
+
+  const content = await StudioContent.findById(contentId)
+    .populate('studioId', 'fullName email role')
+    .populate('moderatedBy', 'fullName email role');
+
+  if (!content) {
+    throw new Error('Content not found');
+  }
+
+  return content;
+};
+
+export const approveContent = async (
+  contentId: string,
+  adminId: string
+): Promise<IStudioContent> => {
+  if (!mongoose.Types.ObjectId.isValid(contentId)) {
+    throw new Error('Invalid content id');
+  }
+
+  const content = await StudioContent.findById(contentId);
+
+  if (!content) {
+    throw new Error('Content not found');
+  }
+
+  content.status = 'approved';
+  content.moderationReason = undefined;
+  content.moderatedBy = new mongoose.Types.ObjectId(adminId);
+  content.moderatedAt = new Date();
+
+  await content.save();
+
+  return content;
+};
+
+export const rejectContent = async (
+  contentId: string,
+  adminId: string,
+  moderationReason: string
+): Promise<IStudioContent> => {
+  if (!mongoose.Types.ObjectId.isValid(contentId)) {
+    throw new Error('Invalid content id');
+  }
+
+  if (!moderationReason?.trim()) {
+    throw new Error('Moderation reason is required');
+  }
+
+  const content = await StudioContent.findById(contentId);
+
+  if (!content) {
+    throw new Error('Content not found');
+  }
+
+  content.status = 'rejected';
+  content.moderationReason = moderationReason.trim();
+  content.moderatedBy = new mongoose.Types.ObjectId(adminId);
+  content.moderatedAt = new Date();
+
+  await content.save();
+
+  return content;
+};
+
+export const hideContent = async (
+  contentId: string,
+  adminId: string,
+  moderationReason: string
+): Promise<IStudioContent> => {
+  if (!mongoose.Types.ObjectId.isValid(contentId)) {
+    throw new Error('Invalid content id');
+  }
+
+  if (!moderationReason?.trim()) {
+    throw new Error('Moderation reason is required');
+  }
+
+  const content = await StudioContent.findById(contentId);
+
+  if (!content) {
+    throw new Error('Content not found');
+  }
+
+  content.status = 'hidden';
+  content.moderationReason = moderationReason.trim();
+  content.moderatedBy = new mongoose.Types.ObjectId(adminId);
+  content.moderatedAt = new Date();
+
+  await content.save();
+
+  return content;
 };

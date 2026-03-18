@@ -1,16 +1,24 @@
 import { Request, Response } from 'express';
 import {
+  approveContent,
   approvePortfolio,
+  getAllContents,
   getAllPortfolios,
+  getContentDetailByAdmin,
+  getMyContentDetail,
+  getMyContents,
   getMyPortfolioDetail,
   getMyPortfolios,
   getPortfolioDetailByAdmin,
   getProfileForReview,
+  hideContent,
+  rejectContent,
   rejectPortfolio,
   submitPortfolio,
+  submitStudioContent,
 } from './review.service';
 
-// STUDIO
+// STUDIO PORTFOLIO
 
 export const submitStudioPortfolio = async (req: Request, res: Response) => {
   try {
@@ -54,10 +62,8 @@ export const getMyStudioPortfolioDetail = async (req: Request, res: Response) =>
   try {
     const studioId = req.header('x-user-id');
     const requestId = String(req.params.id);
-    const portfolio = await getMyPortfolioDetail(
-      studioId as string,
-      requestId
-    );
+
+    const portfolio = await getMyPortfolioDetail(studioId as string, requestId);
 
     return res.status(200).json({
       message: 'Portfolio detail fetched successfully.',
@@ -70,7 +76,7 @@ export const getMyStudioPortfolioDetail = async (req: Request, res: Response) =>
   }
 };
 
-// ADMIN
+// ADMIN PORTFOLIO
 
 export const getAllStudioPortfolios = async (_req: Request, res: Response) => {
   try {
@@ -110,6 +116,7 @@ export const approveStudioPortfolio = async (req: Request, res: Response) => {
   try {
     const adminId = req.header('x-user-id');
     const requestId = String(req.params.id);
+
     const portfolio = await approvePortfolio(requestId, adminId as string);
 
     return res.status(200).json({
@@ -128,6 +135,7 @@ export const rejectStudioPortfolio = async (req: Request, res: Response) => {
     const adminId = req.header('x-user-id');
     const { rejectionReason } = req.body;
     const requestId = String(req.params.id);
+
     const portfolio = await rejectPortfolio(
       requestId,
       adminId as string,
@@ -144,6 +152,9 @@ export const rejectStudioPortfolio = async (req: Request, res: Response) => {
     });
   }
 };
+
+// PROFILE REVIEW
+
 export const getProfileReviewDetail = async (req: Request, res: Response) => {
   try {
     const requestId = String(req.params.id);
@@ -156,6 +167,164 @@ export const getProfileReviewDetail = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(404).json({
       message: error.message || 'Failed to fetch profile review detail.',
+    });
+  }
+};
+
+// STUDIO CONTENT
+
+export const createStudioContent = async (req: Request, res: Response) => {
+  try {
+    const studioId = req.header('x-user-id');
+
+    if (!studioId) {
+      return res.status(401).json({ message: 'Missing x-user-id' });
+    }
+
+    const content = await submitStudioContent(studioId, req.body);
+
+    return res.status(201).json({
+      message: 'Content submitted successfully.',
+      content,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getMyStudioContents = async (req: Request, res: Response) => {
+  try {
+    const studioId = req.header('x-user-id');
+
+    const contents = await getMyContents(studioId as string);
+
+    return res.status(200).json({
+      message: 'My contents fetched successfully.',
+      contents,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getMyStudioContentDetail = async (req: Request, res: Response) => {
+  try {
+    const studioId = req.header('x-user-id');
+    const contentId = String(req.params.id);
+
+    const content = await getMyContentDetail(studioId as string, contentId);
+
+    return res.status(200).json({
+      message: 'Content detail fetched successfully.',
+      content,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      message: error.message,
+    });
+  }
+};
+
+// ADMIN CONTENT
+
+export const getAllStudioContents = async (_req: Request, res: Response) => {
+  try {
+    const contents = await getAllContents();
+
+    return res.status(200).json({
+      message: 'All contents fetched successfully.',
+      contents,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getStudioContentDetailByAdmin = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const contentId = String(req.params.id);
+    const content = await getContentDetailByAdmin(contentId);
+
+    return res.status(200).json({
+      message: 'Content detail fetched successfully.',
+      content,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      message: error.message,
+    });
+  }
+};
+
+export const approveStudioContent = async (req: Request, res: Response) => {
+  try {
+    const adminId = req.header('x-user-id');
+    const contentId = String(req.params.id);
+
+    const content = await approveContent(contentId, adminId as string);
+
+    return res.status(200).json({
+      message: 'Content approved successfully.',
+      content,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const rejectStudioContent = async (req: Request, res: Response) => {
+  try {
+    const adminId = req.header('x-user-id');
+    const { moderationReason } = req.body;
+    const contentId = String(req.params.id);
+
+    const content = await rejectContent(
+      contentId,
+      adminId as string,
+      moderationReason
+    );
+
+    return res.status(200).json({
+      message: 'Content rejected successfully.',
+      content,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const hideStudioContent = async (req: Request, res: Response) => {
+  try {
+    const adminId = req.header('x-user-id');
+    const { moderationReason } = req.body;
+    const contentId = String(req.params.id);
+
+    const content = await hideContent(
+      contentId,
+      adminId as string,
+      moderationReason
+    );
+
+    return res.status(200).json({
+      message: 'Content hidden successfully.',
+      content,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
     });
   }
 };
