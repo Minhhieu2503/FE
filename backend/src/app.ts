@@ -9,6 +9,7 @@ import { connectDB } from './config/db';
 import userRoutes from './modules/user/user.route';
 import chatRoutes from './modules/chat/chat.route';
 import kycRoutes from './modules/kyc/kyc.route';
+import reviewRoutes from './modules/review/review.route';
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // DB
 connectDB();
@@ -31,5 +33,6 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api', reviewRoutes);
 
 export default app;
