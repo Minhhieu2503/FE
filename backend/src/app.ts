@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectDB } from './config/db';
 import authRoutes from './modules/auth/auth.routes';
+import passwordRoutes from './modules/password/password.routes';
 
 const app = express();
 
@@ -22,6 +23,7 @@ connectDB();
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/auth', passwordRoutes);
 
 // Health check
 app.get('/', (req, res) => {
