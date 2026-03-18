@@ -1,23 +1,27 @@
 import admin from 'firebase-admin';
-import path from 'path';
-import fs from 'fs';
 
 let serviceAccount: any;
 
 try {
-  const serviceAccountPath = path.resolve(__dirname, './firebase-service-account.json');
-  if (fs.existsSync(serviceAccountPath)) {
-    serviceAccount = require(serviceAccountPath);
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+    serviceAccount = JSON.parse(decoded);
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   } else {
-    console.warn('Firebase service account not found. Please provide FIREBASE_SERVICE_ACCOUNT env var or src/config/firebase-service-account.json');
+    console.warn('Firebase service account not found. Please provide FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_BASE64');
+  }
+
+  if (serviceAccount?.private_key) {
+    serviceAccount.private_key = String(serviceAccount.private_key).replace(/\\n/g, '\n');
   }
 
   if (serviceAccount) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    }
     console.log('Firebase Admin initialized successfully');
   }
 } catch (error) {

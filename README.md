@@ -39,9 +39,32 @@ Luu y quan trong:
 - Da ho tro:
 	- Register (`/auth/register`)
 	- Login (`/auth/login`)
+	- Google Login (`/auth/google-login`)
 	- Logout local (va goi `/auth/logout` neu backend co)
 - Sau khi register thanh cong, app tu dong login va vao Home.
 - Register co them `Confirm Password` + show/hide password.
+
+#### Cau hinh them cho Google Login (frontend/.env)
+Can bo sung day du cac bien sau trong `frontend/.env`:
+
+```env
+EXPO_PUBLIC_FIREBASE_API_KEY=
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+EXPO_PUBLIC_FIREBASE_APP_ID=
+EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID=
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
+```
+
+Luu y backend:
+- Endpoint `POST /auth/google-login` xac minh Firebase ID token bang Firebase Admin.
+- Khong luu service account trong source code. Chi cau hinh bang bien moi truong:
+	- `FIREBASE_SERVICE_ACCOUNT` (JSON string)
+	- hoac `FIREBASE_SERVICE_ACCOUNT_BASE64` (base64 cua JSON service account, de de cau hinh tren Render).
 
 ### 5. Loi thuong gap
 
