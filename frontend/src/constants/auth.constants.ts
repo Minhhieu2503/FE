@@ -20,6 +20,5 @@ export const AUTH_ENDPOINTS = {
   login: '/auth/login',
   forgotPassword: '/auth/forgot-password',
   resetPassword: '/auth/reset-password',
-  googleLogin: '/auth/google-login',
   logout: '/auth/logout',
 } as const;

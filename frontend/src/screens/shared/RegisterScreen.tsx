@@ -49,11 +49,6 @@ export default function RegisterScreen({ navigation }: any) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('UI Mode', 'Google register is disabled in UI-only mode.');
-    navigation.replace('CustomerHome');
-  };
-
   const navigateToLogin = () => {
     navigation.replace('Login');
   };
@@ -169,23 +164,6 @@ export default function RegisterScreen({ navigation }: any) {
               ) : (
                 <Text style={styles.signInText}>Create Account →</Text>
               )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Button */}
-            <TouchableOpacity 
-              style={styles.googleBtn}
-              onPress={handleGoogleLogin} 
-              activeOpacity={0.8}
-            >
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
-              <Text style={styles.googleBtnText}>Google</Text>
             </TouchableOpacity>
 
             {/* Footer Text */}
@@ -322,42 +300,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E0E0E0',
-  },
-  dividerText: {
-    color: '#BBBBBB',
-    fontSize: 12,
-    letterSpacing: 1.5,
-    marginHorizontal: 12,
-  },
-  googleBtn: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 14,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  googleBtnDisabled: {
-    opacity: 0.7,
-  },
-  googleBtnText: {
-    color: '#333333',
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 12,
   },
   footerContainer: {
     flexDirection: 'row',

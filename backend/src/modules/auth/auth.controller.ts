@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
 import * as authService from './auth.service';
-import admin from '../../config/firebase.config';
-import User from '../../models/user.model';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -43,41 +41,28 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-export const loginGoogle = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { idToken } = req.body;
-
-    // Verify Firebase ID token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const firebaseUser = await admin.auth().getUser(decodedToken.uid);
-
-    // Sync with MongoDB
-    const user = await User.findOrCreateFromFirebase(firebaseUser);
-
-    if (!user.isActive) {
-      res.status(403).json({ message: 'Account is banned or inactive' });
-      return;
-    }
-
-    // Generate SnapBook tokens
-    const accessToken = authService.generateAccessToken(user._id as unknown as string, user.role);
-    const refreshToken = authService.generateRefreshToken(user._id as unknown as string, user.role);
+    const { email } = req.body;
+    await authService.forgotPasswordService(email);
 
     res.status(200).json({
-      message: 'Google login successful',
-      data: {
-        user: {
-          _id: user._id,
-          email: user.email,
-          role: user.role,
-          kycStatus: user.kycStatus,
-        },
-        accessToken,
-        refreshToken,
-      }
+      message: 'If that email exists, a reset link has been sent.',
     });
   } catch (error: any) {
-    console.error('Firebase Google login error:', error);
-    res.status(401).json({ message: 'Invalid or expired Firebase token' });
+    res.status(500).json({ message: error.message || 'Forgot password failed' });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, email, password } = req.body;
+    await authService.resetPasswordService(token, password, email);
+
+    res.status(200).json({
+      message: 'Password has been reset successfully',
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || 'Reset password failed' });
   }
 };
