@@ -37,8 +37,8 @@ export const authService = {
     await api.post(AUTH_ENDPOINTS.forgotPassword, { email });
   },
 
-  async resetPassword(token: string, password: string, email?: string) {
-    await api.post(AUTH_ENDPOINTS.resetPassword, { token, password, email });
+  async resetPassword(otp: string, password: string, email?: string) {
+    await api.post(AUTH_ENDPOINTS.resetPassword, { otp, password, email });
   },
 
   async googleLogin(idToken: string) {

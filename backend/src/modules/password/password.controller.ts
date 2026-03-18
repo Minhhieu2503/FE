@@ -16,8 +16,8 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { token, email, password } = req.body;
-    await passwordService.resetPasswordService(token, password, email);
+    const { otp, email, password } = req.body;
+    await passwordService.resetPasswordService(otp, password, email);
 
     res.status(200).json({
       message: 'Password has been reset successfully',

@@ -18,10 +18,10 @@ export const validateForgotPassword = (req: Request, res: Response, next: NextFu
 };
 
 export const validateResetPassword = (req: Request, res: Response, next: NextFunction): void => {
-  const { token, password } = req.body;
+  const { otp, password } = req.body;
 
-  if (!token || !password) {
-    res.status(400).json({ message: 'Token and password are required' });
+  if (!otp || !password) {
+    res.status(400).json({ message: 'OTP and password are required' });
     return;
   }
 
