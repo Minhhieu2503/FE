@@ -8,6 +8,10 @@ import morgan from 'morgan';
 import { connectDB } from './config/db';
 import authRoutes from './modules/auth/auth.routes';
 import passwordRoutes from './modules/password/password.routes';
+import profileRoutes from './modules/profile/profile.routes';
+import kycRoutes from './modules/kyc/kyc.routes';
+import scheduleRoutes from './modules/schedule/schedule.routes';
+import bookingRoutes from './modules/booking/booking.routes';
 
 const app = express();
 
@@ -24,6 +28,10 @@ connectDB();
 // Routes
 app.use('/auth', authRoutes);
 app.use('/auth', passwordRoutes);
+app.use('/profile', profileRoutes);
+app.use('/kyc', kycRoutes);
+app.use('/schedule', scheduleRoutes);
+app.use('/bookings', bookingRoutes);
 
 // Health check
 app.get('/', (req, res) => {
