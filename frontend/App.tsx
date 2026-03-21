@@ -1,31 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import * as ExpoLinking from 'expo-linking';
 import { ActivityIndicator, View } from 'react-native';
-import {
-  LoginScreen,
-  RegisterScreen,
-  ForgotPasswordScreen,
-  ResetPasswordScreen,
-} from './src/screens/shared';
+import LoginScreen from './src/screens/shared/LoginScreen';
+import RegisterScreen from './src/screens/shared/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/shared/ForgotPasswordScreen';
 import CustomerHomeScreen from './src/screens/customer/CustomerHomeScreen';
 import { authService } from './src/services/auth.service';
 
 const Stack = createNativeStackNavigator();
-
-const linking = {
-  prefixes: [ExpoLinking.createURL('/'), 'snapbook://'],
-  config: {
-    screens: {
-      Login: 'login',
-      Register: 'register',
-      ForgotPassword: 'forgot-password',
-      ResetPassword: 'reset-password',
-      CustomerHome: 'customer-home',
-    },
-  },
-};
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<'Login' | 'CustomerHome' | null>(null);
@@ -53,7 +36,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen 
           name="Login" 
@@ -68,11 +51,6 @@ export default function App() {
         <Stack.Screen
           name="ForgotPassword"
           component={ForgotPasswordScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ResetPassword"
-          component={ResetPasswordScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen 

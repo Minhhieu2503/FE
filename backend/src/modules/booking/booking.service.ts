@@ -1,10 +1,40 @@
 import Booking, { IBooking, BookingStatus } from '../../models/booking.model';
 import Slot, { SlotStatus, ISlot } from '../../models/slot.model';
 
+import Schedule from '../../models/schedule.model';
+
 export const createBooking = async (
   bookingData: Partial<IBooking>
 ): Promise<IBooking> => {
-  // 1. Check for schedule conflict based on existing Slots
+  // 0. Verify the slot physically exists in the Studio's base schedule
+  const schedule = await Schedule.findOne({ studioId: bookingData.studioId });
+  if (!schedule) throw new Error('Studio has no schedule setup.');
+
+  const bookDate = new Date(bookingData.date as Date);
+  const dayOfWeek = bookDate.getDay();
+
+  const markedDateObj = schedule.markedDates.find(md => new Date(md.date).toDateString() === bookDate.toDateString());
+
+  let isBaseAvailable = false;
+  if (markedDateObj) {
+    if (!markedDateObj.isAvailable) {
+      throw new Error('The studio is completely unavailable on this date.');
+    }
+    isBaseAvailable = markedDateObj.timeSlots.some(ts => ts.startTime === bookingData.startTime && ts.endTime === bookingData.endTime);
+  } else {
+    // Fallback to weekly template
+    const template = schedule.weeklyTemplate.find(wt => wt.dayOfWeek === dayOfWeek);
+    if (!template || !template.isAvailable) {
+      throw new Error('The studio is not available on this day of the week.');
+    }
+    isBaseAvailable = template.timeSlots.some(ts => ts.startTime === bookingData.startTime && ts.endTime === bookingData.endTime);
+  }
+
+  if (!isBaseAvailable) {
+    throw new Error('The requested time slot does not exist in the studio\'s base schedule.');
+  }
+
+  // 1. Check for real-time schedule conflict based on existing locked/unavailable Slots
   const existingConflict = await Slot.findOne({
     studioId: bookingData.studioId,
     date: bookingData.date,
@@ -13,7 +43,7 @@ export const createBooking = async (
   });
 
   if (existingConflict) {
-    throw new Error('Conflict Schedule: The requested time slot is not available.');
+    throw new Error('Conflict Schedule: The requested time slot is already booked or blocked.');
   }
 
   // 2. Create the Booking

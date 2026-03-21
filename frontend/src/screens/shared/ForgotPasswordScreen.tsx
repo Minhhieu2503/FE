@@ -32,7 +32,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('ResetPassword', { email: email.trim() }),
+            onPress: () => navigation.goBack(),
           },
         ]
       );
