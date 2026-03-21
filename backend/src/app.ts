@@ -12,6 +12,7 @@ import kycRoutes from './modules/kyc/kyc.route';
 import reviewRoutes from './modules/review/review.route';
 import dashboardRoutes from './modules/dashboard/dashboard.route';
 import adminFinanceRoutes from "./modules/adminFinance/adminFinance.route";
+import notificationRoutes from "./modules/notification/notification.route";
 
 const app = express();
 
@@ -38,5 +39,6 @@ app.use('/api/kyc', kycRoutes);
 app.use('/api', reviewRoutes);
 app.use('/api', dashboardRoutes);
 app.use("/api/admin-finance", adminFinanceRoutes);
+app.use("/api/notification", notificationRoutes);
 
 export default app;
