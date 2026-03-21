@@ -10,6 +10,7 @@ import userRoutes from './modules/user/user.route';
 import chatRoutes from './modules/chat/chat.route';
 import kycRoutes from './modules/kyc/kyc.route';
 import reviewRoutes from './modules/review/review.route';
+import dashboardRoutes from './modules/dashboard/dashboard.route';
 
 const app = express();
 
@@ -34,5 +35,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api', reviewRoutes);
+app.use('/api', dashboardRoutes);
 
 export default app;
