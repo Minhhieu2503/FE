@@ -6,7 +6,12 @@ import StudioPortfolio, {
 } from '../../models/studioPortfolio.model';
 import StudioContent, { IStudioContent } from '../../models/studioContent.model';
 import User from '../user/user.model';
+import StudioReview, { IStudioReview } from '../../models/studioReview.model';
 
+export interface CreateStudioReviewInput {
+  rating: number;
+  comment?: string;
+}
 export interface SubmitPortfolioInput {
   title: string;
   description: string;
@@ -358,4 +363,90 @@ export const hideContent = async (
   await content.save();
 
   return content;
+};
+export const createReviewForStudio = async (
+  customerId: string,
+  studioId: string,
+  payload: CreateStudioReviewInput
+): Promise<IStudioReview> => {
+  const { rating, comment } = payload;
+
+  if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    throw new Error('Invalid customer id');
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(studioId)) {
+    throw new Error('Invalid studio id');
+  }
+
+  if (!rating || Number(rating) < 1 || Number(rating) > 5) {
+    throw new Error('Rating must be between 1 and 5');
+  }
+
+  const customer = await User.findById(customerId);
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  const studio = await User.findById(studioId);
+  if (!studio) {
+    throw new Error('Studio not found');
+  }
+
+  if (String(customerId) === String(studioId)) {
+    throw new Error('You cannot review your own studio');
+  }
+
+  // nếu muốn mỗi customer chỉ review 1 lần / studio
+  const existingReview = await StudioReview.findOne({ customerId, studioId });
+
+  if (existingReview) {
+    existingReview.rating = Number(rating);
+    existingReview.comment = comment?.trim() || '';
+    await existingReview.save();
+    return existingReview;
+  }
+
+  const review = await StudioReview.create({
+    customerId,
+    studioId,
+    rating: Number(rating),
+    comment: comment?.trim() || '',
+  });
+
+  return review;
+};
+
+export const getReviewsByStudio = async (studioId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(studioId)) {
+    throw new Error('Invalid studio id');
+  }
+
+  const studio = await User.findById(studioId);
+  if (!studio) {
+    throw new Error('Studio not found');
+  }
+
+  const reviews = await StudioReview.find({ studioId })
+    .populate('customerId', 'fullName email')
+    .populate('studioId', 'fullName email')
+    .sort({ createdAt: -1 });
+
+  const totalReviews = reviews.length;
+
+  const averageRating =
+    totalReviews === 0
+      ? 0
+      : Number(
+          (
+            reviews.reduce((sum, item) => sum + item.rating, 0) / totalReviews
+          ).toFixed(1)
+        );
+
+  return {
+    studioId,
+    totalReviews,
+    averageRating,
+    reviews,
+  };
 };

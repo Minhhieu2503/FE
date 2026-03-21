@@ -16,6 +16,10 @@ import {
   rejectPortfolio,
   submitPortfolio,
   submitStudioContent,
+
+  // NEW
+  createReviewForStudio,
+  getReviewsByStudio,
 } from './review.service';
 
 // STUDIO PORTFOLIO
@@ -321,6 +325,49 @@ export const hideStudioContent = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: 'Content hidden successfully.',
       content,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
+// CUSTOMER REVIEW & RATING
+// =========================
+
+export const createStudioReview = async (req: Request, res: Response) => {
+  try {
+    const customerId = req.header('x-user-id');
+    const studioId = String(req.params.studioId);
+
+    if (!customerId) {
+      return res.status(401).json({ message: 'Missing x-user-id' });
+    }
+
+    const review = await createReviewForStudio(customerId, studioId, req.body);
+
+    return res.status(201).json({
+      message: 'Studio review submitted successfully.',
+      review,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getStudioReviews = async (req: Request, res: Response) => {
+  try {
+    const studioId = String(req.params.studioId);
+
+    const result = await getReviewsByStudio(studioId);
+
+    return res.status(200).json({
+      message: 'Studio reviews fetched successfully.',
+      data: result,
     });
   } catch (error: any) {
     return res.status(400).json({

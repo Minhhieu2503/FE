@@ -16,6 +16,10 @@ import {
   rejectStudioContent,
   rejectStudioPortfolio,
   submitStudioPortfolio,
+
+  // NEW
+  createStudioReview,
+  getStudioReviews,
 } from './review.controller';
 import { requireAdmin } from '../../middlewares/admin.middleware';
 
@@ -46,5 +50,15 @@ router.get('/content/admin/:id', requireAdmin, getStudioContentDetailByAdmin);
 router.patch('/content/admin/:id/approve', requireAdmin, approveStudioContent);
 router.patch('/content/admin/:id/reject', requireAdmin, rejectStudioContent);
 router.patch('/content/admin/:id/hide', requireAdmin, hideStudioContent);
+
+// =========================
+// CUSTOMER REVIEW & RATING
+// =========================
+
+// customer review + rating a studio
+router.post('/studio/:studioId/review', createStudioReview);
+
+// get all reviews of a studio
+router.get('/studio/:studioId/review', getStudioReviews);
 
 export default router;
