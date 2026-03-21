@@ -1,11 +1,15 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Schema } from 'mongoose';
+
+export type NotificationType = 'booking' | 'payment' | 'message' | 'bulk' | 'system';
 
 export interface IUserNotification extends Document {
   userId: mongoose.Types.ObjectId;
   title: string;
   message: string;
-  type: "bulk" | "system" | "promotion";
+  type: NotificationType;
   isRead: boolean;
+  relatedBookingId?: mongoose.Types.ObjectId;
+  relatedPaymentId?: mongoose.Types.ObjectId;
   bulkNotificationId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -15,8 +19,9 @@ const userNotificationSchema = new Schema<IUserNotification>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
+      index: true,
     },
     title: {
       type: String,
@@ -30,22 +35,37 @@ const userNotificationSchema = new Schema<IUserNotification>(
     },
     type: {
       type: String,
-      enum: ["bulk", "system", "promotion"],
-      default: "bulk",
+      enum: ['booking', 'payment', 'message', 'bulk', 'system'],
+      default: 'system',
+      required: true,
+      index: true,
     },
     isRead: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+    relatedBookingId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Booking',
+    },
+    relatedPaymentId: {
+      type: Schema.Types.ObjectId,
     },
     bulkNotificationId: {
       type: Schema.Types.ObjectId,
-      ref: "BulkNotification",
+      ref: 'BulkNotification',
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    collection: 'usernotifications',
+  }
 );
 
-export default mongoose.model<IUserNotification>(
-  "UserNotification",
+const UserNotification = mongoose.model<IUserNotification>(
+  'UserNotification',
   userNotificationSchema
 );
+
+export default UserNotification;

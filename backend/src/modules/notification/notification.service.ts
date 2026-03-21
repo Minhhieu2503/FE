@@ -2,11 +2,6 @@ import BulkNotification from "../../models/bulkNotification.model";
 import UserNotification from "../../models/userNotification.model";
 import mongoose from "mongoose";
 
-/*
-  Vì bạn chưa gửi user model, nên mình dùng mongoose connection đọc trực tiếp collection users.
-  Cách này vẫn chạy được nếu collection của bạn tên là "users".
-*/
-
 class NotificationService {
   async sendBulkNotification(data: {
     title: string;
@@ -20,7 +15,7 @@ class NotificationService {
       throw new Error("Database connection is not ready");
     }
 
-    let userFilter: any = {};
+    const userFilter: any = {};
 
     if (data.targetType === "customers") {
       userFilter.role = "customer";
@@ -67,26 +62,76 @@ class NotificationService {
   async getBulkNotificationHistory() {
     return await BulkNotification.find()
       .sort({ createdAt: -1 })
-      .populate("sentBy", "name email username role");
+      .populate("sentBy", "fullName email role");
   }
 
-  async getUserNotifications(userId: string) {
-    return await UserNotification.find({ userId })
+  async getUserNotifications(
+    userId: string,
+    type?: string,
+    isRead?: string
+  ) {
+    const filter: any = { userId };
+
+    if (type) {
+      filter.type = type;
+    }
+
+    if (isRead !== undefined) {
+      if (isRead === "true") {
+        filter.isRead = true;
+      } else if (isRead === "false") {
+        filter.isRead = false;
+      }
+    }
+
+    return await UserNotification.find(filter)
       .sort({ createdAt: -1 })
+      .populate("userId", "fullName email role")
       .populate("bulkNotificationId");
   }
 
-  async markNotificationAsRead(notificationId: string) {
-    const notification = await UserNotification.findById(notificationId);
+  async getUnreadNotificationCount(userId: string) {
+    const unreadCount = await UserNotification.countDocuments({
+      userId,
+      isRead: false,
+    });
+
+    return { unreadCount };
+  }
+
+  async markNotificationAsRead(
+    notificationId: string,
+    userId?: string,
+    role?: string
+  ) {
+    let filter: any = { _id: notificationId };
+
+    if (role !== "admin") {
+      if (!userId) {
+        throw new Error("Unauthorized");
+      }
+      filter.userId = userId;
+    }
+
+    const notification = await UserNotification.findOne(filter);
 
     if (!notification) {
-      throw new Error("Notification not found");
+      throw new Error("Notification not found or access denied");
     }
 
     notification.isRead = true;
     await notification.save();
 
     return notification;
+  }
+
+  async markAllNotificationsAsRead(userId: string) {
+    await UserNotification.updateMany(
+      { userId, isRead: false },
+      { $set: { isRead: true } }
+    );
+
+    return { message: "All notifications marked as read successfully" };
   }
 }
 
