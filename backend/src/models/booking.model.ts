@@ -7,6 +7,13 @@ export type BookingStatus =
   | 'completed'
   | 'cancelled';
 
+// 👉 thêm type cho photo
+export interface IBookingPhoto {
+  _id?: mongoose.Types.ObjectId;
+  fileName: string;
+  url: string;
+}
+
 export interface IBooking extends Document {
   customerId: mongoose.Types.ObjectId;
   studioId: mongoose.Types.ObjectId;
@@ -18,10 +25,13 @@ export interface IBooking extends Document {
   status: BookingStatus;
 
   // 💰 Giá tiền
-  price: number; // giá dịch vụ gốc
-  totalAmount: number; // tổng tiền khách trả
-  platformFee: number; // tiền nền tảng ăn (commission)
-  payoutAmount: number; // tiền trả cho studio
+  price: number;
+  totalAmount: number;
+  platformFee: number;
+  payoutAmount: number;
+
+  // 👉 NEW: photos
+  photos: IBookingPhoto[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -90,6 +100,24 @@ const BookingSchema = new Schema<IBooking>(
       required: true,
       min: 0,
     },
+
+    // =========================
+    // 👉 DELIVERY PHOTOS
+    // =========================
+    photos: [
+      {
+        fileName: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        url: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

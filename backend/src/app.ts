@@ -16,7 +16,7 @@ import notificationRoutes from "./modules/notification/notification.route";
 import commissionRoutes from "./modules/commission/commission.route";
 import policyRoutes from "./modules/policy/policy.route";
 import bookingRoutes from "./modules/booking/booking.route";
-
+import deliveryRoutes from "./modules/delivery/delivery.route";
 const app = express();
 
 // Middleware
@@ -46,5 +46,5 @@ app.use("/api/notification", notificationRoutes);
 app.use("/api/commission", commissionRoutes);
 app.use("/api/policy", policyRoutes);
 app.use("/api/booking", bookingRoutes);
-
+app.use("/api/delivery", deliveryRoutes);
 export default app;
