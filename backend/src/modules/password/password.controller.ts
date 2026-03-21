@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../../middlewares/auth.middleware';
 import * as passwordService from './password.service';
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
@@ -24,5 +25,20 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message || 'Reset password failed' });
+  }
+};
+
+export const changePasswordAuth = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id?.toString() as string;
+    const { oldPassword, newPassword } = req.body;
+
+    await passwordService.changePasswordService(userId, oldPassword, newPassword);
+
+    res.status(200).json({
+      message: 'Password successfully changed',
+    });
+  } catch (error: any) {
+    res.status(401).json({ message: error.message || 'Change password failed' });
   }
 };

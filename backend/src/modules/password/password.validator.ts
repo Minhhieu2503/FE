@@ -32,3 +32,24 @@ export const validateResetPassword = (req: Request, res: Response, next: NextFun
 
   next();
 };
+
+export const validateChangePassword = (req: Request, res: Response, next: NextFunction): void => {
+  const { oldPassword, newPassword, confirmNewPassword } = req.body;
+
+  if (!oldPassword || !newPassword || !confirmNewPassword) {
+    res.status(400).json({ message: 'oldPassword, newPassword, and confirmNewPassword are required' });
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    res.status(400).json({ message: 'New password must be at least 6 characters' });
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    res.status(400).json({ message: 'New password and confirm password do not match' });
+    return;
+  }
+
+  next();
+};

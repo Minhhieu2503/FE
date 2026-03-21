@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import User from '../../models/user.model';
 import { sendEmail } from '../../shared/email.service';
 
@@ -62,5 +63,25 @@ export const resetPasswordService = async (token: string, newPassword: string, e
   user.password = newPassword;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
+  await user.save();
+};
+
+export const changePasswordService = async (userId: string, oldPassword: string, newPassword: string) => {
+  // Query user directly using ID and explicitly select the hidden password string
+  const user = await User.findById(userId).select('+password');
+  
+  if (!user || !user.password) {
+    throw new Error('User not found or password undefined');
+  }
+
+  // Compare the brute string with the hashed value inside DB
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  
+  if (!isMatch) {
+    throw new Error('Incorrect current password');
+  }
+
+  // Since Mongoose schema pre('save') uses bcrypt itself, we just reassign the raw string!
+  user.password = newPassword;
   await user.save();
 };
