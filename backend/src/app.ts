@@ -15,6 +15,7 @@ import adminFinanceRoutes from "./modules/adminFinance/adminFinance.route";
 import notificationRoutes from "./modules/notification/notification.route";
 import commissionRoutes from "./modules/commission/commission.route";
 import policyRoutes from "./modules/policy/policy.route";
+import bookingRoutes from "./modules/booking/booking.route";
 
 const app = express();
 
@@ -44,5 +45,6 @@ app.use("/api/admin-finance", adminFinanceRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/commission", commissionRoutes);
 app.use("/api/policy", policyRoutes);
+app.use("/api/booking", bookingRoutes);
 
 export default app;
