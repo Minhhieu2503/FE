@@ -6,6 +6,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectDB } from './config/db';
+
+// ===== OLD FLOW =====
+import userRoutes from './modules/user/user.route';
+import chatRoutes from './modules/chat/chat.route';
+import dashboardRoutes from './modules/dashboard/dashboard.route';
+import adminFinanceRoutes from './modules/adminFinance/adminFinance.route';
+import notificationRoutes from './modules/notification/notification.route';
+import commissionRoutes from './modules/commission/commission.route';
+import policyRoutes from './modules/policy/policy.route';
+
+// ===== MERGED / NEW FLOW =====
 import authRoutes from './modules/auth/auth.routes';
 import passwordRoutes from './modules/password/password.routes';
 import profileRoutes from './modules/profile/profile.routes';
@@ -32,7 +43,7 @@ app.use(express.urlencoded({ extended: true }));
 // DB
 connectDB();
 
-// Routes
+// ===== NEW ROUTES =====
 app.use('/auth', authRoutes);
 app.use('/auth', passwordRoutes);
 app.use('/profile', profileRoutes);
@@ -47,8 +58,21 @@ app.use('/vouchers', voucherRoutes);
 app.use('/studios', studioRoutes);
 app.use('/wishlist', wishlistRoutes);
 
+// ===== OLD ROUTES =====
+app.use('/api/users', userRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api', reviewRoutes);
+app.use('/api', dashboardRoutes);
+app.use('/api/admin-finance', adminFinanceRoutes);
+app.use('/api/notification', notificationRoutes);
+app.use('/api/commission', commissionRoutes);
+app.use('/api/policy', policyRoutes);
+app.use('/api/booking', bookingRoutes);
+app.use('/api/delivery', deliveryRoutes);
+
 // Health check
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({ message: 'SnapBook API is running!' });
 });
 

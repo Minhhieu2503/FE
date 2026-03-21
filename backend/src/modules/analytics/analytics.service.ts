@@ -2,25 +2,29 @@ import mongoose from 'mongoose';
 import Booking, { BookingStatus } from '../../models/booking.model';
 import Wallet from '../../models/wallet.model';
 
+type BookingStats = Record<BookingStatus, number> & {
+  total: number;
+};
+
 export const getDashboardMetrics = async (studioId: string) => {
   const oId = new mongoose.Types.ObjectId(studioId);
 
   // 1. Fetch Wallet Data
   let wallet = await Wallet.findOne({ studioId: oId });
+
   if (!wallet) {
-    // Graceful fallback for brand-new studios missing a wallet
     wallet = await Wallet.create({ studioId: oId });
   }
 
   // 2. Fetch Booking Stats (Count by Status)
   const bookingAggregation = await Booking.aggregate([
     { $match: { studioId: oId } },
-    { $group: { _id: "$status", count: { $sum: 1 } } }
+    { $group: { _id: '$status', count: { $sum: 1 } } }
   ]);
 
-  // Format booking stats nicely
-  const bookingStats = {
+  const bookingStats: BookingStats = {
     [BookingStatus.PENDING]: 0,
+    [BookingStatus.PAID]: 0,
     [BookingStatus.CONFIRMED]: 0,
     [BookingStatus.COMPLETED]: 0,
     [BookingStatus.CANCELLED]: 0,
@@ -28,8 +32,9 @@ export const getDashboardMetrics = async (studioId: string) => {
     total: 0
   };
 
-  bookingAggregation.forEach(stat => {
-    bookingStats[stat._id as BookingStatus] = stat.count;
+  bookingAggregation.forEach((stat) => {
+    const status = stat._id as BookingStatus;
+    bookingStats[status] = stat.count;
     bookingStats.total += stat.count;
   });
 
@@ -49,18 +54,20 @@ export const getDashboardMetrics = async (studioId: string) => {
     },
     {
       $group: {
-        _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } },
-        revenue: { $sum: "$packageDetails.price" },
+        _id: {
+          month: { $month: '$createdAt' },
+          year: { $year: '$createdAt' }
+        },
+        revenue: { $sum: '$packageDetails.price' },
         successfulBookings: { $sum: 1 }
       }
     },
-    { 
-      $sort: { "_id.year": 1, "_id.month": 1 } 
+    {
+      $sort: { '_id.year': 1, '_id.month': 1 }
     }
   ]);
 
-  // Transform MongoDB's _id structure to flat array
-  const monthlyChart = monthlyAggregation.map(item => ({
+  const monthlyChart = monthlyAggregation.map((item) => ({
     label: `${item._id.month}/${item._id.year}`,
     revenue: item.revenue,
     successfulBookings: item.successfulBookings
