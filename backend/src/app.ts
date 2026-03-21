@@ -11,6 +11,7 @@ import chatRoutes from './modules/chat/chat.route';
 import kycRoutes from './modules/kyc/kyc.route';
 import reviewRoutes from './modules/review/review.route';
 import dashboardRoutes from './modules/dashboard/dashboard.route';
+import adminFinanceRoutes from "./modules/adminFinance/adminFinance.route";
 
 const app = express();
 
@@ -36,5 +37,6 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api', reviewRoutes);
 app.use('/api', dashboardRoutes);
+app.use("/api/admin-finance", adminFinanceRoutes);
 
 export default app;
