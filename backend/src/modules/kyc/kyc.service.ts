@@ -3,7 +3,8 @@ import StudioRegistrationRequest, {
   IVerificationDocument,
   IStudioRegistrationRequest,
 } from '../../models/studioRegistrationRequest.model';
-import User from '../user/user.model';
+import Kyc, { IKyc } from '../../models/kyc.model';
+import User, { KycStatus,UserRole } from '../../models/user.model';
 
 export interface SubmitStudioRegistrationInput {
   studioName: string;
@@ -13,11 +14,20 @@ export interface SubmitStudioRegistrationInput {
   verificationDocuments: IVerificationDocument[];
 }
 
+// =========================
+// OLD FLOW: Studio registration
+// =========================
 export const submitStudioRegistration = async (
   userId: string,
   payload: SubmitStudioRegistrationInput
 ): Promise<IStudioRegistrationRequest> => {
-  const { studioName, phone, address, description, verificationDocuments } = payload;
+  const {
+    studioName,
+    phone,
+    address,
+    description,
+    verificationDocuments,
+  } = payload;
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new Error('Invalid user id');
@@ -49,11 +59,11 @@ export const submitStudioRegistration = async (
     throw new Error('User not found');
   }
 
-  if (user.role === 'studio') {
+  if (user.role === UserRole.STUDIO) {
     throw new Error('You are already a studio');
   }
 
-  if (user.role !== 'customer') {
+  if (user.role !== UserRole.CUSTOMER) {
     throw new Error('Only customer can register to become a studio');
   }
 
@@ -164,7 +174,7 @@ export const approveStudioRegistration = async (
     throw new Error('User not found');
   }
 
-  user.role = 'studio';
+  user.role = UserRole.STUDIO;
   await user.save();
 
   request.status = 'approved';
@@ -212,4 +222,48 @@ export const rejectStudioRegistration = async (
   await request.save();
 
   return request;
+};
+
+// =========================
+// NEW FLOW: KYC
+// =========================
+export const submitKyc = async (
+  userId: string,
+  idDocURL: string,
+  selfieURL: string,
+  portfolioURLs: string[]
+): Promise<IKyc> => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user id');
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const kyc = await Kyc.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        idDocURL,
+        selfieURL,
+        portfolioURLs,
+        status: KycStatus.PENDING,
+      },
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+
+  await User.findByIdAndUpdate(userId, { kycStatus: KycStatus.PENDING });
+
+  return kyc;
+};
+
+export const getMyKyc = async (userId: string): Promise<IKyc | null> => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user id');
+  }
+
+  return await Kyc.findOne({ userId });
 };

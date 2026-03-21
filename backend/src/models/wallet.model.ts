@@ -7,6 +7,10 @@ export interface IWallet extends Document {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  studioId: mongoose.Types.ObjectId;
+  totalRevenue: number;
+  holdingBalance: number;
+  availableBalance: number;
 }
 
 const walletSchema = new Schema<IWallet>(
@@ -31,6 +35,10 @@ const walletSchema = new Schema<IWallet>(
       type: Boolean,
       default: true,
     },
+    studioId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    totalRevenue: { type: Number, default: 0 },
+    holdingBalance: { type: Number, default: 0 },
+    availableBalance: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

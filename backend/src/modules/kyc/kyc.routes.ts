@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import {
+  uploadKyc,
+  viewMyKyc,
   approveStudioRegistration,
   getAllStudioRegistrations,
   getMyStudioRegistrationDetail,
@@ -8,9 +10,35 @@ import {
   rejectStudioRegistration,
   submitStudioRegistration,
 } from './kyc.controller';
+import { validateKycSubmission } from './kyc.validator';
+import { verifyToken as protect } from '../../middlewares/auth.middleware';
+import { upload } from '../../middlewares/upload.middleware';
 import { requireAdmin } from '../../middlewares/admin.middleware';
 
 const router = Router();
+
+// =========================
+// NEW FLOW: KYC upload
+// =========================
+
+// Submit KYC - Customer requesting to upgrade to Studio
+router.post(
+  '/',
+  protect,
+  upload.fields([
+    { name: 'idDocument', maxCount: 1 },
+    { name: 'selfie', maxCount: 1 },
+  ]),
+  validateKycSubmission,
+  uploadKyc
+);
+
+// Get current user's KYC details
+router.get('/me', protect, viewMyKyc);
+
+// =========================
+// OLD FLOW: Studio registration
+// =========================
 
 // Customer routes
 router.post('/studio-registration', submitStudioRegistration);

@@ -16,35 +16,48 @@ import {
   rejectStudioContent,
   rejectStudioPortfolio,
   submitStudioPortfolio,
-
-  // NEW
   createStudioReview,
   getStudioReviews,
+  getMyStudioReviews,
+  patchReviewReply,
+  postMockReview,
 } from './review.controller';
+import { verifyToken as protect, roleMiddleware } from '../../middlewares/auth.middleware';
+import { UserRole } from '../../models/user.model';
 import { requireAdmin } from '../../middlewares/admin.middleware';
 
 const router = Router();
 
-// Studio portfolio routes
+// =========================
+// STUDIO PORTFOLIO
+// =========================
 router.post('/portfolio', submitStudioPortfolio);
 router.get('/portfolio/me', getMyStudioPortfolios);
 router.get('/portfolio/me/:id', getMyStudioPortfolioDetail);
 
-// Admin portfolio routes
+// =========================
+// ADMIN PORTFOLIO
+// =========================
 router.get('/portfolio/admin', requireAdmin, getAllStudioPortfolios);
 router.get('/portfolio/admin/:id', requireAdmin, getStudioPortfolioDetailByAdmin);
 router.patch('/portfolio/admin/:id/approve', requireAdmin, approveStudioPortfolio);
 router.patch('/portfolio/admin/:id/reject', requireAdmin, rejectStudioPortfolio);
 
-// Admin profile review route
+// =========================
+// ADMIN PROFILE REVIEW
+// =========================
 router.get('/review/profile/:id', requireAdmin, getProfileReviewDetail);
 
-// Studio content routes
+// =========================
+// STUDIO CONTENT
+// =========================
 router.post('/content', createStudioContent);
 router.get('/content/me', getMyStudioContents);
 router.get('/content/me/:id', getMyStudioContentDetail);
 
-// Admin content routes
+// =========================
+// ADMIN CONTENT
+// =========================
 router.get('/content/admin', requireAdmin, getAllStudioContents);
 router.get('/content/admin/:id', requireAdmin, getStudioContentDetailByAdmin);
 router.patch('/content/admin/:id/approve', requireAdmin, approveStudioContent);
@@ -52,13 +65,36 @@ router.patch('/content/admin/:id/reject', requireAdmin, rejectStudioContent);
 router.patch('/content/admin/:id/hide', requireAdmin, hideStudioContent);
 
 // =========================
-// CUSTOMER REVIEW & RATING
+// CUSTOMER REVIEW & RATING - OLD FLOW
+// =========================
+router.post('/studio/:studioId/review', createStudioReview);
+router.get('/studio/:studioId/review', getStudioReviews);
+
+// =========================
+// NEW REVIEW FLOW
 // =========================
 
-// customer review + rating a studio
-router.post('/studio/:studioId/review', createStudioReview);
+// Studio retrieves all reviews of themselves + stats
+router.get(
+  '/studio/reviews/me',
+  protect,
+  roleMiddleware(UserRole.STUDIO),
+  getMyStudioReviews
+);
 
-// get all reviews of a studio
-router.get('/studio/:studioId/review', getStudioReviews);
+// Studio replies to a specific review
+router.patch(
+  '/:id/reply',
+  protect,
+  roleMiddleware(UserRole.STUDIO),
+  patchReviewReply
+);
+
+// Mock customer submits a review
+router.post(
+  '/reviews',
+  protect,
+  postMockReview
+);
 
 export default router;

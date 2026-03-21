@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../../middlewares/auth.middleware';
 import {
   approveContent,
   approvePortfolio,
@@ -17,9 +18,14 @@ import {
   submitPortfolio,
   submitStudioContent,
 
-  // NEW
+  // old customer review
   createReviewForStudio,
   getReviewsByStudio,
+
+  // new review flow
+  getReviewsByStudioId,
+  replyToReview,
+  createMockReview,
 } from './review.service';
 
 // STUDIO PORTFOLIO
@@ -62,7 +68,10 @@ export const getMyStudioPortfolios = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyStudioPortfolioDetail = async (req: Request, res: Response) => {
+export const getMyStudioPortfolioDetail = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const studioId = req.header('x-user-id');
     const requestId = String(req.params.id);
@@ -215,7 +224,10 @@ export const getMyStudioContents = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyStudioContentDetail = async (req: Request, res: Response) => {
+export const getMyStudioContentDetail = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const studioId = req.header('x-user-id');
     const contentId = String(req.params.id);
@@ -334,7 +346,7 @@ export const hideStudioContent = async (req: Request, res: Response) => {
 };
 
 // =========================
-// CUSTOMER REVIEW & RATING
+// CUSTOMER REVIEW & RATING - OLD FLOW
 // =========================
 
 export const createStudioReview = async (req: Request, res: Response) => {
@@ -359,11 +371,22 @@ export const createStudioReview = async (req: Request, res: Response) => {
   }
 };
 
+// =========================
+// REVIEW - MERGED SUPPORT
+// =========================
+
+// Public/customer flow: get reviews by studioId from params
 export const getStudioReviews = async (req: Request, res: Response) => {
   try {
-    const studioId = String(req.params.studioId);
+    const studioIdFromParams = req.params.studioId;
 
-    const result = await getReviewsByStudio(studioId);
+    if (!studioIdFromParams || Array.isArray(studioIdFromParams)) {
+      return res.status(400).json({
+        message: 'studioId is required',
+      });
+    }
+
+    const result = await getReviewsByStudio(studioIdFromParams);
 
     return res.status(200).json({
       message: 'Studio reviews fetched successfully.',
@@ -371,6 +394,86 @@ export const getStudioReviews = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+// Studio flow: get reviews of current logged-in studio
+export const getMyStudioReviews = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const studioId = req.user?._id?.toString() as string;
+    const data = await getReviewsByStudioId(studioId);
+
+    res.status(200).json({
+      message: 'Studio reviews fetched successfully',
+      data,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message || 'Error fetching reviews',
+    });
+  }
+};
+
+export const patchReviewReply = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const studioId = req.user?._id?.toString() as string;
+    const reviewId = req.params.id as string;
+    const { replyContent } = req.body;
+
+    if (!replyContent || typeof replyContent !== 'string') {
+      res.status(400).json({ message: 'replyContent string is required' });
+      return;
+    }
+
+    const updatedReview = await replyToReview(reviewId, studioId, replyContent);
+
+    res.status(200).json({
+      message: 'Reply posted successfully',
+      review: updatedReview,
+    });
+  } catch (error: any) {
+    res.status(403).json({
+      message: error.message,
+    });
+  }
+};
+
+export const postMockReview = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const customerId = req.user?._id?.toString() as string;
+    const { bookingId, rating, content } = req.body;
+
+    if (!bookingId || !rating || !content) {
+      res.status(400).json({
+        message: 'bookingId, rating, content required',
+      });
+      return;
+    }
+
+    const review = await createMockReview(
+      bookingId,
+      customerId,
+      rating,
+      content
+    );
+
+    res.status(201).json({
+      message: 'Mock review created',
+      review,
+    });
+  } catch (error: any) {
+    res.status(400).json({
       message: error.message,
     });
   }

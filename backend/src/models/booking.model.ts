@@ -1,13 +1,14 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type BookingStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'paid'
-  | 'completed'
-  | 'cancelled';
+export enum BookingStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PAID = 'PAID',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  REJECTED = 'REJECTED',
+}
 
-// 👉 thêm type cho photo
 export interface IBookingPhoto {
   _id?: mongoose.Types.ObjectId;
   fileName: string;
@@ -17,27 +18,36 @@ export interface IBookingPhoto {
 export interface IBooking extends Document {
   customerId: mongoose.Types.ObjectId;
   studioId: mongoose.Types.ObjectId;
+  voucherId?: mongoose.Types.ObjectId;
 
-  serviceName: string;
+  serviceName?: string;
   description?: string;
 
-  bookingDate: Date;
+  bookingDate?: Date;
+  date?: Date;
+  startTime?: string;
+  endTime?: string;
+
   status: BookingStatus;
 
-  // 💰 Giá tiền
-  price: number;
-  totalAmount: number;
-  platformFee: number;
-  payoutAmount: number;
+  price?: number;
+  totalAmount?: number;
+  platformFee?: number;
+  payoutAmount?: number;
+  deposit: number;
 
-  // 👉 NEW: photos
+  packageDetails?: {
+    name: string;
+    price: number;
+  };
+
   photos: IBookingPhoto[];
 
   createdAt: Date;
   updatedAt: Date;
 }
 
-const BookingSchema = new Schema<IBooking>(
+const bookingSchema: Schema = new Schema(
   {
     customerId: {
       type: Schema.Types.ObjectId,
@@ -45,20 +55,23 @@ const BookingSchema = new Schema<IBooking>(
       required: true,
       index: true,
     },
-
     studioId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
       index: true,
     },
+    voucherId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Voucher',
+      default: null,
+    },
 
     serviceName: {
       type: String,
-      required: true,
       trim: true,
+      default: null,
     },
-
     description: {
       type: String,
       trim: true,
@@ -66,44 +79,56 @@ const BookingSchema = new Schema<IBooking>(
 
     bookingDate: {
       type: Date,
-      required: true,
+    },
+
+    date: {
+      type: Date,
+    },
+    startTime: {
+      type: String,
+    },
+    endTime: {
+      type: String,
     },
 
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'paid', 'completed', 'cancelled'],
-      default: 'pending',
+      enum: Object.values(BookingStatus),
+      default: BookingStatus.PENDING,
       index: true,
     },
 
-    // 💰 financial fields
     price: {
       type: Number,
-      required: true,
       min: 0,
+      default: 0,
     },
-
     totalAmount: {
       type: Number,
-      required: true,
       min: 0,
+      default: 0,
     },
-
     platformFee: {
       type: Number,
-      required: true,
       min: 0,
+      default: 0,
     },
-
     payoutAmount: {
       type: Number,
-      required: true,
       min: 0,
+      default: 0,
+    },
+    deposit: {
+      type: Number,
+      required: true,
+      default: 0,
     },
 
-    // =========================
-    // 👉 DELIVERY PHOTOS
-    // =========================
+    packageDetails: {
+      name: { type: String },
+      price: { type: Number },
+    },
+
     photos: [
       {
         fileName: {
@@ -124,6 +149,5 @@ const BookingSchema = new Schema<IBooking>(
   }
 );
 
-const Booking = mongoose.model<IBooking>('Booking', BookingSchema);
-
+const Booking = mongoose.model<IBooking>('Booking', bookingSchema);
 export default Booking;

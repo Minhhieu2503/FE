@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import * as kycService from './kyc.service';
+import { submitKyc, getMyKyc } from './kyc.service';
+import { uploadToCloudinary } from '../../shared/cloudinary.service';
+import { AuthRequest } from '../../middlewares/auth.middleware';
 
 const getUserIdFromHeader = (req: Request): string => {
   const userId = req.header('x-user-id');
@@ -11,6 +14,9 @@ const getUserIdFromHeader = (req: Request): string => {
   return userId;
 };
 
+// =========================
+// OLD FLOW: Studio registration
+// =========================
 export const submitStudioRegistration = async (
   req: Request,
   res: Response
@@ -58,6 +64,7 @@ export const getMyStudioRegistrationDetail = async (
   try {
     const userId = getUserIdFromHeader(req);
     const requestId = String(req.params.id);
+
     const result = await kycService.getMyStudioRegistrationDetail(
       userId,
       requestId
@@ -98,7 +105,11 @@ export const getStudioRegistrationDetailByAdmin = async (
 ): Promise<void> => {
   try {
     const requestId = String(req.params.id);
-    const result = await kycService.getStudioRegistrationDetailByAdmin(requestId);
+
+    const result = await kycService.getStudioRegistrationDetailByAdmin(
+      requestId
+    );
+
     res.status(200).json({
       message: 'Fetched studio registration detail successfully',
       data: result,
@@ -117,6 +128,7 @@ export const approveStudioRegistration = async (
   try {
     const adminId = getUserIdFromHeader(req);
     const requestId = String(req.params.id);
+
     const result = await kycService.approveStudioRegistration(
       requestId,
       adminId
@@ -140,7 +152,8 @@ export const rejectStudioRegistration = async (
   try {
     const adminId = getUserIdFromHeader(req);
     const { rejectReason } = req.body;
-     const requestId = String(req.params.id);
+    const requestId = String(req.params.id);
+
     const result = await kycService.rejectStudioRegistration(
       requestId,
       adminId,
@@ -154,6 +167,90 @@ export const rejectStudioRegistration = async (
   } catch (error: any) {
     res.status(400).json({
       message: error.message || 'Failed to reject studio registration',
+    });
+  }
+};
+
+// =========================
+// NEW FLOW: Upload KYC files
+// =========================
+export const uploadKyc = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?._id?.toString();
+
+    if (!userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    if (!files || !files['idDocument'] || !files['selfie']) {
+      res.status(400).json({
+        message: 'Both idDocument and selfie image files are required.',
+      });
+      return;
+    }
+
+    const idDocumentFile = files['idDocument'][0];
+    const selfieFile = files['selfie'][0];
+
+    const [idDocURL, selfieURL] = await Promise.all([
+      uploadToCloudinary(idDocumentFile.buffer, 'snapbook/kyc'),
+      uploadToCloudinary(selfieFile.buffer, 'snapbook/kyc'),
+    ]);
+
+    const { portfolioURLs } = req.body;
+
+    const kycRecord = await submitKyc(
+      userId,
+      idDocURL,
+      selfieURL,
+      portfolioURLs || []
+    );
+
+    res.status(201).json({
+      message: 'KYC submitted successfully',
+      kyc: kycRecord,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message || 'Error submitting KYC',
+    });
+  }
+};
+
+export const viewMyKyc = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?._id?.toString();
+
+    if (!userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    const kycRecord = await getMyKyc(userId);
+
+    if (!kycRecord) {
+      res.status(404).json({ message: 'KYC record not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'KYC fetched successfully',
+      data: kycRecord,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message || 'Error fetching KYC',
     });
   }
 };

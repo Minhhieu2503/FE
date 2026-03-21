@@ -8,10 +8,15 @@ import StudioContent, { IStudioContent } from '../../models/studioContent.model'
 import User from '../user/user.model';
 import StudioReview, { IStudioReview } from '../../models/studioReview.model';
 
+// NEW FLOW
+import Review, { IReview } from '../../models/review.model';
+import Booking from '../../models/booking.model';
+
 export interface CreateStudioReviewInput {
   rating: number;
   comment?: string;
 }
+
 export interface SubmitPortfolioInput {
   title: string;
   description: string;
@@ -29,6 +34,9 @@ export interface SubmitStudioContentInput {
   }[];
 }
 
+// =========================
+// PORTFOLIO
+// =========================
 export const submitPortfolio = async (
   studioId: string,
   payload: SubmitPortfolioInput
@@ -65,7 +73,9 @@ export const submitPortfolio = async (
   return portfolio;
 };
 
-export const getMyPortfolios = async (studioId: string): Promise<IStudioPortfolio[]> => {
+export const getMyPortfolios = async (
+  studioId: string
+): Promise<IStudioPortfolio[]> => {
   return StudioPortfolio.find({ studioId }).sort({ createdAt: -1 });
 };
 
@@ -196,8 +206,9 @@ export const getProfileForReview = async (userId: string) => {
   };
 };
 
+// =========================
 // CONTENT
-
+// =========================
 export const submitStudioContent = async (
   studioId: string,
   payload: SubmitStudioContentInput
@@ -234,7 +245,9 @@ export const submitStudioContent = async (
   return content;
 };
 
-export const getMyContents = async (studioId: string): Promise<IStudioContent[]> => {
+export const getMyContents = async (
+  studioId: string
+): Promise<IStudioContent[]> => {
   return StudioContent.find({ studioId }).sort({ createdAt: -1 });
 };
 
@@ -364,6 +377,10 @@ export const hideContent = async (
 
   return content;
 };
+
+// =========================
+// OLD FLOW: STUDIO REVIEW
+// =========================
 export const createReviewForStudio = async (
   customerId: string,
   studioId: string,
@@ -397,7 +414,6 @@ export const createReviewForStudio = async (
     throw new Error('You cannot review your own studio');
   }
 
-  // nếu muốn mỗi customer chỉ review 1 lần / studio
   const existingReview = await StudioReview.findOne({ customerId, studioId });
 
   if (existingReview) {
@@ -449,4 +465,111 @@ export const getReviewsByStudio = async (studioId: string) => {
     averageRating,
     reviews,
   };
+};
+
+// =========================
+// NEW FLOW: REVIEW
+// =========================
+export const getReviewsByStudioId = async (studioId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(studioId)) {
+    throw new Error('Invalid studio id');
+  }
+
+  const oId = new mongoose.Types.ObjectId(studioId);
+
+  const reviews = await Review.find({
+    studioId: oId,
+    isAIApproved: true,
+  })
+    .populate('customerId', 'fullName avatar')
+    .sort({ createdAt: -1 });
+
+  const aggregation = await Review.aggregate([
+    { $match: { studioId: oId, isAIApproved: true } },
+    {
+      $group: {
+        _id: null,
+        averageRating: { $avg: '$rating' },
+        totalReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const stats =
+    aggregation.length > 0
+      ? {
+          averageRating: parseFloat(
+            aggregation[0].averageRating.toFixed(1)
+          ),
+          totalReviews: aggregation[0].totalReviews,
+        }
+      : { averageRating: 0, totalReviews: 0 };
+
+  return { stats, reviews };
+};
+
+export const replyToReview = async (
+  reviewId: string,
+  studioId: string,
+  replyContent: string
+): Promise<IReview> => {
+  if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+    throw new Error('Invalid review id');
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(studioId)) {
+    throw new Error('Invalid studio id');
+  }
+
+  if (!replyContent?.trim()) {
+    throw new Error('Reply content is required');
+  }
+
+  const review = await Review.findById(reviewId);
+  if (!review) {
+    throw new Error('Review not found');
+  }
+
+  if (review.studioId.toString() !== studioId) {
+    throw new Error('Not authorized to reply to this review');
+  }
+
+  review.replyContent = replyContent.trim();
+  return await review.save();
+};
+
+export const createMockReview = async (
+  bookingId: string,
+  customerId: string,
+  rating: number,
+  content: string
+): Promise<IReview> => {
+  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+    throw new Error('Invalid booking id');
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    throw new Error('Invalid customer id');
+  }
+
+  if (!rating || Number(rating) < 1 || Number(rating) > 5) {
+    throw new Error('Rating must be between 1 and 5');
+  }
+
+  if (!content?.trim()) {
+    throw new Error('Content is required');
+  }
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  return await Review.create({
+    bookingId,
+    customerId,
+    studioId: booking.studioId,
+    rating: Number(rating),
+    content: content.trim(),
+  });
 };
