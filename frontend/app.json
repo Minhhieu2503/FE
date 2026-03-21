@@ -17,17 +17,27 @@
       "bundleIdentifier": "com.snapbook.frontend"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.snapbook.frontend",
+      "package": "com.snapbook24.app",
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e2ceda35-3f77-4364-a396-9000c2f443c8"
+      }
+    },
+    "plugins": [
+      "expo-web-browser",
+      "expo-font"
+    ]
   }
 }

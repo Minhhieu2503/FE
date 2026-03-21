@@ -15,12 +15,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authService, getApiErrorMessage } from '../../services/auth.service';
+import { useGoogleFirebaseIdToken } from '../../hooks/useGoogleFirebaseIdToken';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { googleReady, signInAndGetFirebaseIdToken } = useGoogleFirebaseIdToken();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -40,14 +43,22 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('UI Mode', 'Google login is disabled in UI-only mode.');
-    navigation.replace('CustomerHome');
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const session = await signInAndGetFirebaseIdToken();
+      await authService.completeOAuthLogin(session.accessToken, session.refreshToken);
+      Alert.alert('Success', 'Google login successful!');
+      navigation.replace('CustomerHome');
+    } catch (error: any) {
+      Alert.alert('Google Login Failed', getApiErrorMessage(error));
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const navigateToForgot = () => {
-    console.log('Navigate to ForgotPasswordScreen');
-    // navigation.navigate('ForgotPasswordScreen');
+    navigation.navigate('ForgotPassword');
   };
 
   const navigateToRegister = () => {
@@ -146,12 +157,19 @@ export default function LoginScreen({ navigation }: any) {
 
             {/* Google Button */}
             <TouchableOpacity 
-              style={styles.googleBtn}
+              style={[styles.googleBtn, (googleLoading || !googleReady) && styles.googleBtnDisabled]}
               onPress={handleGoogleLogin} 
               activeOpacity={0.8}
+              disabled={googleLoading || !googleReady}
             >
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
-              <Text style={styles.googleBtnText}>Google</Text>
+              {googleLoading ? (
+                <ActivityIndicator color="#DB4437" />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="#DB4437" />
+                  <Text style={styles.googleBtnText}>Google</Text>
+                </>
+              )}
             </TouchableOpacity>
 
             {/* Footer Text */}

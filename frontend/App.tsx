@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import LoginScreen from './src/screens/shared/LoginScreen';
 import RegisterScreen from './src/screens/shared/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/shared/ForgotPasswordScreen';
 import CustomerHomeScreen from './src/screens/customer/CustomerHomeScreen';
 import { authService } from './src/services/auth.service';
 
@@ -46,6 +47,11 @@ export default function App() {
           name="Register" 
           component={RegisterScreen} 
           options={{ headerShown: false }} 
+        />
+        <Stack.Screen
+          name="ForgotPassword"
+          component={ForgotPasswordScreen}
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="CustomerHome" 

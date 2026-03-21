@@ -18,5 +18,8 @@ export const API_BASE_URL = normalizedBase.endsWith('/auth')
 export const AUTH_ENDPOINTS = {
   register: '/auth/register',
   login: '/auth/login',
+  forgotPassword: '/auth/forgot-password',
+  resetPassword: '/auth/reset-password',
+  googleLogin: '/auth/google-login',
   logout: '/auth/logout',
 } as const;

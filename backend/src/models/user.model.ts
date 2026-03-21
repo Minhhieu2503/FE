@@ -18,6 +18,8 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   firebaseUid?: string;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   role: UserRole;
   kycStatus: KycStatus;
   isActive: boolean;
@@ -47,6 +49,15 @@ const userSchema: Schema = new Schema(
       type: String,
       unique: true,
       sparse: true,
+    },
+    passwordResetToken: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
     },
     role: {
       type: String,
@@ -89,6 +100,8 @@ userSchema.methods.matchPassword = async function (enteredPassword: string): Pro
 userSchema.set('toJSON', {
   transform: (doc, ret, options) => {
     delete ret.password;
+    delete ret.passwordResetToken;
+    delete ret.passwordResetExpires;
     return ret;
   },
 });

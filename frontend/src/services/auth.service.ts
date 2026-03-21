@@ -33,6 +33,26 @@ export const authService = {
     return data;
   },
 
+  async forgotPassword(email: string) {
+    await api.post(AUTH_ENDPOINTS.forgotPassword, { email });
+  },
+
+  async resetPassword(token: string, password: string, email?: string) {
+    await api.post(AUTH_ENDPOINTS.resetPassword, { token, password, email });
+  },
+
+  async googleLogin(idToken: string) {
+    const response = await api.post(AUTH_ENDPOINTS.googleLogin, { idToken });
+    const data = unwrap<LoginResponseData>(response.data);
+
+    await tokenService.setTokens(data.accessToken, data.refreshToken);
+    return data;
+  },
+
+  async completeOAuthLogin(accessToken: string, refreshToken?: string) {
+    await tokenService.setTokens(accessToken, refreshToken);
+  },
+
   async logout() {
     try {
       const refreshToken = await tokenService.getRefreshToken();
