@@ -5,7 +5,7 @@ import StudioPortfolio, {
   IStudioPortfolio,
 } from '../../models/studioPortfolio.model';
 import StudioContent, { IStudioContent } from '../../models/studioContent.model';
-import User from '../user/user.model';
+import User from '../../models/user.model';
 import StudioReview, { IStudioReview } from '../../models/studioReview.model';
 
 // NEW FLOW

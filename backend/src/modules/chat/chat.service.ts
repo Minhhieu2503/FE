@@ -1,6 +1,6 @@
 import Conversation from './chat.model';
 import Message, { SenderRole } from './message.model';
-import User from '../user/user.model';
+import User from './../../models/user.model';
 
 interface SendMessageInput {
   customerId: string;

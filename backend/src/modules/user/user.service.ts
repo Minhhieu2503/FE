@@ -1,4 +1,4 @@
-import User, { IUser, UserRole } from './user.model';
+import User, { IUser, UserRole } from './../../models/user.model';
 
 export interface CreateUserInput {
   fullName: string;

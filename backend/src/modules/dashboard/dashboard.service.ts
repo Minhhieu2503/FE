@@ -1,5 +1,5 @@
 import Booking from '../../models/booking.model';
-import User from '../user/user.model';
+import User from './../../models/user.model';
 
 const completedStatuses = ['completed', 'paid', 'done'];
 
