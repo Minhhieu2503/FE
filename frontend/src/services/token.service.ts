@@ -43,8 +43,18 @@ export const tokenService = {
     }
   },
 
+  async setRole(role: string) {
+    await safeSetItem(AUTH_STORAGE_KEYS.userRole, role);
+  },
+
+  async getRole(): Promise<string | null> {
+    return safeGetItem(AUTH_STORAGE_KEYS.userRole);
+  },
+
   async clearTokens() {
     await safeRemoveItem(AUTH_STORAGE_KEYS.accessToken);
     await safeRemoveItem(AUTH_STORAGE_KEYS.refreshToken);
+    await safeRemoveItem(AUTH_STORAGE_KEYS.userRole);
   },
 };
+

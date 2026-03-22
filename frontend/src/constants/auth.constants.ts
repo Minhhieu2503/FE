@@ -1,6 +1,7 @@
 export const AUTH_STORAGE_KEYS = {
   accessToken: 'snapbook_access_token',
   refreshToken: 'snapbook_refresh_token',
+  userRole: 'snapbook_user_role',
 } as const;
 
 const rawApiBase =

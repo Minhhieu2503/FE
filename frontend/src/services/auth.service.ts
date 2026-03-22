@@ -30,6 +30,9 @@ export const authService = {
     const data = unwrap<LoginResponseData>(response.data);
 
     await tokenService.setTokens(data.accessToken, data.refreshToken);
+    if (data.user?.role) {
+      await tokenService.setRole(data.user.role);
+    }
     return data;
   },
 
@@ -46,6 +49,9 @@ export const authService = {
     const data = unwrap<LoginResponseData>(response.data);
 
     await tokenService.setTokens(data.accessToken, data.refreshToken);
+    if (data.user?.role) {
+      await tokenService.setRole(data.user.role);
+    }
     return data;
   },
 
@@ -69,6 +75,10 @@ export const authService = {
   async isAuthenticated() {
     const token = await tokenService.getAccessToken();
     return !!token;
+  },
+
+  async getRole() {
+    return tokenService.getRole();
   },
 };
 

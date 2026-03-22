@@ -33,9 +33,15 @@ export default function LoginScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      await authService.login(email.trim(), password);
-      Alert.alert('Success', 'Login successful!');
-      navigation.replace('CustomerHome');
+      const data = await authService.login(email.trim(), password);
+      const role = data?.user?.role?.toUpperCase();
+      if (role === 'STUDIO') {
+        navigation.replace('StudioHome');
+      } else if (role === 'ADMIN') {
+        navigation.replace('AdminHome');
+      } else {
+        navigation.replace('CustomerHome');
+      }
     } catch (error: any) {
       Alert.alert('Login Failed', getApiErrorMessage(error));
     } finally {
@@ -47,9 +53,15 @@ export default function LoginScreen({ navigation }: any) {
     setGoogleLoading(true);
     try {
       const session = await signInAndGetFirebaseIdToken();
-      await authService.completeOAuthLogin(session.accessToken, session.refreshToken);
-      Alert.alert('Success', 'Google login successful!');
-      navigation.replace('CustomerHome');
+      const data = await authService.googleLogin(session.accessToken);
+      const role = data?.user?.role?.toUpperCase();
+      if (role === 'STUDIO') {
+        navigation.replace('StudioHome');
+      } else if (role === 'ADMIN') {
+        navigation.replace('AdminHome');
+      } else {
+        navigation.replace('CustomerHome');
+      }
     } catch (error: any) {
       Alert.alert('Google Login Failed', getApiErrorMessage(error));
     } finally {
